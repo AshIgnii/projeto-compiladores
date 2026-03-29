@@ -1,0 +1,78 @@
+#[derive(Debug)]
+pub enum Terminal {
+    Int,
+    Float,
+    If,
+    Else,
+    While,
+    Return,
+    Print,
+    Id,
+    Num,
+    Assign,
+    Plus,
+    Minus,
+    Multiply,
+    Divide,
+    Equals,
+    NotEquals,
+    LessThan,
+    GreaterThan,
+    LessThanOrEqual,
+    GreaterThanOrEqual,
+    StartParen,
+    EndParen,
+    StartBrace,
+    EndBrace,
+    Comma,
+    Semicolon,
+    Eof,
+    Error,
+}
+impl Terminal {
+    pub fn to_code(&self) -> u8 {
+        match self {
+            Terminal::Int => 1,
+            Terminal::Float => 2,
+            Terminal::If => 3,
+            Terminal::Else => 4,
+            Terminal::While => 5,
+            Terminal::Return => 6,
+            Terminal::Print => 7,
+            Terminal::Id => 8,
+            Terminal::Num => 9,
+            Terminal::Assign => 10,
+            Terminal::Plus => 11,
+            Terminal::Minus => 12,
+            Terminal::Multiply => 13,
+            Terminal::Divide => 14,
+            Terminal::Equals => 15,
+            Terminal::NotEquals => 16,
+            Terminal::LessThan => 17,
+            Terminal::GreaterThan => 18,
+            Terminal::LessThanOrEqual => 19,
+            Terminal::GreaterThanOrEqual => 20,
+            Terminal::StartParen => 21,
+            Terminal::EndParen => 22,
+            Terminal::StartBrace => 23,
+            Terminal::EndBrace => 24,
+            Terminal::Comma => 25,
+            Terminal::Semicolon => 26,
+            Terminal::Eof => 27,
+            Terminal::Error => 28,
+        }
+    }
+
+    pub fn keyword_to_terminal(keyword: &str) -> Option<Terminal> {
+        match keyword {
+            "int" => Some(Terminal::Int),
+            "float" => Some(Terminal::Float),
+            "if" => Some(Terminal::If),
+            "else" => Some(Terminal::Else),
+            "while" => Some(Terminal::While),
+            "return" => Some(Terminal::Return),
+            "print" => Some(Terminal::Print),
+            _ => None,
+        }
+    }
+}
