@@ -36,16 +36,4 @@ impl<'a> Reader<'a> {
     pub(crate) fn peek(&self) -> Option<u8> {
         self.data.get(self.position).copied()
     }
-
-    fn skip(&mut self, n: usize) {
-        for _ in 0..n {
-            if self.next_char().is_none() {
-                break;
-            }
-        }
-    }
-
-    fn is_eof(&self) -> bool {
-        self.position >= self.data.len()
-    }
 }
