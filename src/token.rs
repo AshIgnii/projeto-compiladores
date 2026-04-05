@@ -12,7 +12,11 @@ impl fmt::Display for Token {
         write!(
             f,
             "<{:?}, {}, \"{}\", {}:{}>",
-            self.terminal, self.terminal.to_code(), self.lexema, self.line, self.column
+            self.terminal,
+            self.terminal.to_code(),
+            self.lexema,
+            self.line,
+            self.column
         )
     }
 }

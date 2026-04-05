@@ -401,14 +401,12 @@ impl<'a> Automaton<'a> {
         self.blank_char();
 
         match self.reader.peek() {
-            None => {
-                Some(Token {
-                    terminal: Terminal::Eof,
-                    lexema: String::new(),
-                    line: self.reader.line,
-                    column: self.reader.column,
-                })
-            }
+            None => Some(Token {
+                terminal: Terminal::Eof,
+                lexema: String::new(),
+                line: self.reader.line,
+                column: self.reader.column,
+            }),
             Some(b) => match b {
                 b'a'..=b'z' | b'A'..=b'Z' => self.id_or_keyword(),
                 b'0'..=b'9' => self.int_or_float(),

@@ -7,12 +7,12 @@ use crate::automaton::Automaton;
 use crate::reader::Reader;
 use crate::token::Token;
 use memmap2::Mmap;
-use std::{env, io};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
+use std::{env, io};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -23,7 +23,6 @@ fn main() {
     }
 
     let output_enabled = !args.contains(&String::from("--no-output"));
-
 
     let filename = &args[1];
     if !file_exists(filename) {
@@ -69,7 +68,12 @@ fn process_file(filename: &str, output_enabled: bool) {
 
         writeln!(ew, "\x1b[31mErros léxicos encontrados:\x1b[0m").unwrap();
         for error in errors {
-            writeln!(ew, "\x1b[31mCaractere inválido '{}' em {}:{}\x1b[0m", error.lexema, error.line, error.column).unwrap();
+            writeln!(
+                ew,
+                "\x1b[31mCaractere inválido '{}' em {}:{}\x1b[0m",
+                error.lexema, error.line, error.column
+            )
+            .unwrap();
         }
         ew.flush().unwrap();
         println!("\nTempo de processamento: {:.2?}", duration);
