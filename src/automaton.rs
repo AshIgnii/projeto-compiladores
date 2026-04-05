@@ -47,7 +47,7 @@ impl<'a> Automaton<'a> {
             }
         }
 
-        let terminal = Terminal::keyword_to_terminal(&lexema.as_str()).unwrap_or(Terminal::Id);
+        let terminal = Terminal::keyword_to_terminal(lexema.as_str()).unwrap_or(Terminal::Id);
         Some(Token {
             terminal,
             lexema,

@@ -17,7 +17,7 @@ use std::time::Instant;
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
-        let program_name = args[0].split('\\').last().unwrap_or(&args[0]);
+        let program_name = args[0].split('\\').next_back().unwrap_or(&args[0]);
         eprintln!("Nenhum Arquivo Fornecido.\nUso: {} <arquivo>", program_name);
         exit(1);
     }
@@ -39,7 +39,7 @@ fn process_file(filename: &str, output_enabled: bool) {
     let file: File = File::open(filename).expect("Erro ao abrir o arquivo");
     let mmap: Mmap = unsafe { Mmap::map(&file).expect("Erro ao mapear arquivo em memoria") };
 
-    let reader: Reader = Reader::new(&(*mmap));
+    let reader: Reader = Reader::new(&mmap);
     let mut automaton: Automaton = Automaton::new(reader);
 
     let mut errors: Vec<Token> = Vec::new();
@@ -80,5 +80,5 @@ fn process_file(filename: &str, output_enabled: bool) {
 }
 
 fn file_exists(path: &str) -> bool {
-    Path::new(path).try_exists().unwrap_or_else(|_err| false)
+    Path::new(path).try_exists().unwrap_or(false)
 }
