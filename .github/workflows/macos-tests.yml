@@ -1,0 +1,55 @@
+name: macOS Test
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+    workflow_dispatch:
+
+env:
+    CARGO_TERM_COLOR: always
+
+jobs:
+    test-macos:
+        runs-on: macos-latest
+        steps:
+            - uses: actions/checkout@v6
+            - uses: dtolnay/rust-toolchain@stable
+
+            - name: Build
+              run: cargo build --release --verbose
+
+            - name: Test
+              run: cargo test --release --verbose
+
+            - name: Executar lexer nos arquivos de teste
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  BIN="./target/release/Compilador"
+
+                  shopt -s nullglob
+                  test_files=(testes/*.c)
+                  if [ ${#test_files[@]} -eq 0 ]; then
+                      echo "Nenhum arquivo de teste encontrado em testes/"
+                      exit 1
+                  fi
+
+                  failed=0
+                  for f in "${test_files[@]}"; do
+                      echo "::group::Executando lexer em $f"
+                      if "$BIN" "$f" --no-output; then
+                          echo "OK: $f"
+                      else
+                          echo "FALHA: $f"
+                          failed=$((failed + 1))
+                      fi
+                      echo "::endgroup::"
+                  done
+
+                  if [ "$failed" -ne 0 ]; then
+                      echo "$failed arquivo(s) de teste falharam"
+                      exit 1
+                  fi
+                  echo "Todos os testes executaram com sucesso"
