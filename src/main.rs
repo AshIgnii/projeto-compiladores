@@ -51,9 +51,10 @@ fn process_file(filename: &str, output_enabled: bool) {
 
     let mut parser = Parser::new(automaton);
     let accepted = parser.parse(&mut logger);
-    logger.flush();
 
     let duration = start_time.elapsed();
+
+    logger.flush();
     println!("\nTempo de processamento: {:.2?}", duration);
 
     if !accepted {

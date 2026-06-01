@@ -148,19 +148,20 @@ impl<W: Write> Logger<W> {
     }
 
     fn step(&mut self, color: &str, action: &str, stack: &[Symbol]) {
+        let vlen = visible_len(action);
         let pad = if self.width >= 17 + ACTION_WIDTH + 16 {
             ACTION_WIDTH
         } else {
-            visible_len(action)
+            vlen
         };
-        let spaces = " ".repeat(pad.saturating_sub(visible_len(action)));
+        let spaces = " ".repeat(pad.saturating_sub(vlen));
         write!(
             self.writer,
             "   {DIM}acao:{RESET} {color}{action}{spaces}{RESET}  {DIM}pilha:{RESET}"
         )
         .unwrap();
 
-        let mut used = 3 + 6 + action.chars().count().max(pad) + 8;
+        let mut used = 3 + 6 + vlen.max(pad) + 8;
         let total = stack.len();
         for (shown, &symbol) in stack.iter().rev().enumerate() {
             let name = symbol.name();
