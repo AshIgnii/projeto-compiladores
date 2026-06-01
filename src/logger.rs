@@ -35,11 +35,12 @@ impl<W: Write> Logger<W> {
         if self.verbose {
             writeln!(
                 self.writer,
-                "\n{CYAN}{BOLD}>> {} {:?}{RESET}{DIM}  (codigo {}, linha {}){RESET}",
+                "\n{CYAN}{BOLD}>> {} {:?}{RESET}{DIM}  (codigo {}, linha {}, coluna {}){RESET}",
                 tok.terminal.name(),
                 tok.lexema,
                 tok.terminal.to_code(),
-                tok.line
+                tok.line,
+                tok.column
             )
             .unwrap();
         }
@@ -47,7 +48,7 @@ impl<W: Write> Logger<W> {
 
     pub fn step_match(&mut self, symbol: Symbol, stack: &[Symbol]) {
         if self.verbose {
-            self.step(GREEN, &format!("corta {}", symbol.name()), stack);
+            self.step(GREEN, &format!("cortando {}", symbol.name()), stack);
         }
     }
 
@@ -62,7 +63,7 @@ impl<W: Write> Logger<W> {
             self.step(
                 BLUE,
                 &format!(
-                    "M({}, {}) = empilha p{}",
+                    "M({}, {}) = empilhando p{}",
                     nonterminal.name(),
                     lookahead.name(),
                     production
@@ -74,31 +75,32 @@ impl<W: Write> Logger<W> {
 
     pub fn recover_drop_terminal(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, "recupera: descarta terminal", stack);
+            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... terminal descartado"), stack);
         }
     }
 
     pub fn recover_sync(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, "recupera: sincroniza", stack);
+            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... sincronizando"), stack);
         }
     }
 
     pub fn recover_drop_token(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, "recupera: descarta token", stack);
+            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... token descartado"), stack);
         }
     }
 
     pub fn lexical_error(&mut self, tok: &Token) {
-        let msg = format!("linha {}: Caractere invalido '{}'", tok.line, tok.lexema);
+        let msg = format!("linha {}, coluna {}: Caractere invalido '{}'", tok.line, tok.column, tok.lexema);
         self.record("Erro lexico", msg);
     }
 
     pub fn expected(&mut self, expected: Symbol, found: &Token) {
         let msg = format!(
-            "linha {}: Esperado '{}', Encontrado '{}'",
+            "linha {}, coluna {}: Esperado '{}', Encontrado '{}'",
             found.line,
+            found.column,
             expected.name(),
             found_str(found)
         );
@@ -107,8 +109,9 @@ impl<W: Write> Logger<W> {
 
     pub fn unexpected(&mut self, nonterminal: Symbol, found: &Token) {
         let msg = format!(
-            "linha {}: Token inesperado '{}' em <{}>",
+            "linha {}, coluna {}: Token inesperado '{}' em <{}>",
             found.line,
+            found.column,
             found_str(found),
             nonterminal.name()
         );
@@ -120,14 +123,16 @@ impl<W: Write> Logger<W> {
     }
 
     pub fn summary(&mut self) {
+        writeln!(self.writer, "\n{RED}{BOLD}Entrada rejeitada.{RESET}").unwrap();
+
         let total = self.errors.len();
         writeln!(
             self.writer,
             "\n{RED}{BOLD} {total} erro(s) encontrado(s){RESET}"
         )
         .unwrap();
-        for (i, erro) in self.errors.iter().enumerate() {
-            writeln!(self.writer, "{RED}  {:>2}. {}{RESET}", i + 1, erro).unwrap();
+        for (_, erro) in self.errors.iter().enumerate() {
+            writeln!(self.writer, "{RED}   - {}{RESET}", erro).unwrap();
         }
     }
 
@@ -146,11 +151,12 @@ impl<W: Write> Logger<W> {
         let pad = if self.width >= 17 + ACTION_WIDTH + 16 {
             ACTION_WIDTH
         } else {
-            action.chars().count()
+            visible_len(action)
         };
+        let spaces = " ".repeat(pad.saturating_sub(visible_len(action)));
         write!(
             self.writer,
-            "   {DIM}acao:{RESET} {color}{action:<pad$}{RESET}  {DIM}pilha:{RESET}"
+            "   {DIM}acao:{RESET} {color}{action}{spaces}{RESET}  {DIM}pilha:{RESET}"
         )
         .unwrap();
 
@@ -180,6 +186,23 @@ fn detect_width() -> usize {
         .and_then(|cols| cols.parse::<usize>().ok())
         .or_else(|| terminal_size().map(|(Width(w), _)| w as usize))
         .unwrap_or(usize::MAX)
+}
+
+fn visible_len(s: &str) -> usize {
+    let mut len = 0;
+    let mut in_escape = false;
+    for c in s.chars() {
+        if c == '\x1b' {
+            in_escape = true;
+        } else if in_escape {
+            if c == 'm' {
+                in_escape = false;
+            }
+        } else {
+            len += 1;
+        }
+    }
+    len
 }
 
 fn found_str(tok: &Token) -> &str {
