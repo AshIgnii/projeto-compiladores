@@ -1,6 +1,7 @@
 mod automaton;
+mod parsing;
 mod reader;
-mod terminal;
+mod symbols;
 mod token;
 
 use crate::automaton::Automaton;
@@ -47,12 +48,12 @@ fn process_file(filename: &str, output_enabled: bool) {
     let mut writer = BufWriter::new(stdout.lock());
 
     while let Some(token) = automaton.next_token() {
-        if token.terminal == terminal::Terminal::Eof {
+        if token.terminal == symbols::Terminal::Eof {
             if output_enabled {
                 writeln!(writer, "{}", token).unwrap();
             }
             break;
-        } else if token.terminal == terminal::Terminal::Error {
+        } else if token.terminal == symbols::Terminal::Error {
             errors.push(token);
         } else if output_enabled {
             writeln!(writer, "{}", token).unwrap();

@@ -1,4 +1,4 @@
-use crate::terminal::Terminal;
+use crate::symbols::Terminal;
 use std::fmt;
 pub struct Token {
     pub terminal: Terminal,

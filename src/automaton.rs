@@ -1,5 +1,5 @@
 use crate::reader::Reader;
-use crate::terminal::Terminal;
+use crate::symbols::Terminal;
 use crate::token::Token;
 
 pub struct Automaton<'a> {
