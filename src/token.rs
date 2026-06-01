@@ -8,9 +8,9 @@ pub struct Token {
 }
 
 impl fmt::Display for Token {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
-            f,
+            formatter,
             "<{:?}, {}, \"{}\", {}:{}>",
             self.terminal,
             self.terminal.to_code(),

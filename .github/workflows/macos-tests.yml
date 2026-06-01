@@ -25,10 +25,10 @@ jobs:
             - name: Test
               run: cargo test --release --verbose
 
-            - name: Executar lexer nos arquivos de teste
+            - name: Executar analise nos arquivos de teste
               shell: bash
               run: |
-                  set -euo pipefail
+                  set -uo pipefail
                   BIN="./target/release/Compilador"
 
                   shopt -s nullglob
@@ -40,13 +40,28 @@ jobs:
 
                   failed=0
                   for f in "${test_files[@]}"; do
-                      echo "::group::Executando lexer em $f"
-                      if "$BIN" "$f" --no-output; then
-                          echo "OK: $f"
-                      else
-                          echo "FALHA: $f"
-                          failed=$((failed + 1))
-                      fi
+                      echo "::group::Analisando $f"
+                      "$BIN" "$f" --no-output
+                      status=$?
+                      case "$(basename "$f")" in
+                          erro_*)
+                              # Arquivos erro_*.c devem terminar com codigo != 0.
+                              if [ "$status" -ne 0 ]; then
+                                  echo "OK (erro detectado como esperado): $f"
+                              else
+                                  echo "FALHA (esperava erro, mas foi aceito): $f"
+                                  failed=$((failed + 1))
+                              fi
+                              ;;
+                          *)
+                              if [ "$status" -eq 0 ]; then
+                                  echo "OK (aceito): $f"
+                              else
+                                  echo "FALHA (esperava aceitar, mas deu erro): $f"
+                                  failed=$((failed + 1))
+                              fi
+                              ;;
+                      esac
                       echo "::endgroup::"
                   done
 

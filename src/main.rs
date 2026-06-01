@@ -1,15 +1,18 @@
 mod automaton;
+mod logger;
+mod parser;
 mod parsing;
 mod reader;
 mod symbols;
 mod token;
 
 use crate::automaton::Automaton;
+use crate::logger::Logger;
+use crate::parser::Parser;
 use crate::reader::Reader;
-use crate::token::Token;
 use memmap2::Mmap;
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::BufWriter;
 use std::path::Path;
 use std::process::exit;
 use std::time::Instant;
@@ -40,48 +43,22 @@ fn process_file(filename: &str, output_enabled: bool) {
     let mmap: Mmap = unsafe { Mmap::map(&file).expect("Erro ao mapear arquivo em memoria") };
 
     let reader: Reader = Reader::new(&mmap);
-    let mut automaton: Automaton = Automaton::new(reader);
-
-    let mut errors: Vec<Token> = Vec::new();
+    let automaton: Automaton = Automaton::new(reader);
 
     let stdout = io::stdout();
-    let mut writer = BufWriter::new(stdout.lock());
+    let writer = BufWriter::new(stdout.lock());
+    let mut logger = Logger::new(writer, output_enabled);
 
-    while let Some(token) = automaton.next_token() {
-        if token.terminal == symbols::Terminal::Eof {
-            if output_enabled {
-                writeln!(writer, "{}", token).unwrap();
-            }
-            break;
-        } else if token.terminal == symbols::Terminal::Error {
-            errors.push(token);
-        } else if output_enabled {
-            writeln!(writer, "{}", token).unwrap();
-        }
-    }
-    writer.flush().unwrap();
+    let mut parser = Parser::new(automaton);
+    let accepted = parser.parse(&mut logger);
+    logger.flush();
 
     let duration = start_time.elapsed();
+    println!("\nTempo de processamento: {:.2?}", duration);
 
-    if output_enabled && !errors.is_empty() {
-        let stderr = io::stderr();
-        let mut ew = BufWriter::new(stderr.lock());
-
-        writeln!(ew, "\x1b[31mErros léxicos encontrados:\x1b[0m").unwrap();
-        for error in errors {
-            writeln!(
-                ew,
-                "\x1b[31mCaractere inválido '{}' em {}:{}\x1b[0m",
-                error.lexema, error.line, error.column
-            )
-            .unwrap();
-        }
-        ew.flush().unwrap();
-        println!("\nTempo de processamento: {:.2?}", duration);
+    if !accepted {
         exit(1);
     }
-
-    println!("\nTempo de processamento: {:.2?}", duration);
 }
 
 fn file_exists(path: &str) -> bool {

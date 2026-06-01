@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 memmap2 = "0.9.10"
+terminal_size = "0.4"
 
 [profile.release]
 strip = true
