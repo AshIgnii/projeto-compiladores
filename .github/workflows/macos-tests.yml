@@ -41,8 +41,11 @@ jobs:
                   failed=0
                   for f in "${test_files[@]}"; do
                       echo "::group::Analisando $f"
-                      "$BIN" "$f" --no-output
-                      status=$?
+                      if "$BIN" "$f" --no-output; then
+                          status=0
+                      else
+                          status=$?
+                      fi
                       case "$(basename "$f")" in
                           erro_*)
                               # Arquivos erro_*.c devem terminar com codigo != 0.
