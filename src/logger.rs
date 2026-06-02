@@ -75,24 +75,39 @@ impl<W: Write> Logger<W> {
 
     pub fn recover_drop_terminal(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... terminal descartado"), stack);
+            self.step(
+                YELLOW,
+                &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... terminal descartado"),
+                stack,
+            );
         }
     }
 
     pub fn recover_sync(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... sincronizando"), stack);
+            self.step(
+                YELLOW,
+                &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... sincronizando"),
+                stack,
+            );
         }
     }
 
     pub fn recover_drop_token(&mut self, stack: &[Symbol]) {
         if self.verbose {
-            self.step(YELLOW, &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... token descartado"), stack);
+            self.step(
+                YELLOW,
+                &format!("{RED}{BOLD}PANICO{RESET}{YELLOW} recuperando... token descartado"),
+                stack,
+            );
         }
     }
 
     pub fn lexical_error(&mut self, tok: &Token) {
-        let msg = format!("linha {}, coluna {}: Caractere invalido '{}'", tok.line, tok.column, tok.lexema);
+        let msg = format!(
+            "linha {}, coluna {}: Caractere invalido '{}'",
+            tok.line, tok.column, tok.lexema
+        );
         self.record("Erro lexico", msg);
     }
 
