@@ -35,7 +35,7 @@ impl<W: Write> Logger<W> {
         if self.verbose {
             writeln!(
                 self.writer,
-                "\n{CYAN}{BOLD}>> {} {:?}{RESET}{DIM}  (codigo {}, linha {}, coluna {}){RESET}",
+                "\n{CYAN}{BOLD}>> {} {RESET}{DIM}(lexema: {:?}, codigo: {}, linha: {}, coluna: {}){RESET}",
                 tok.terminal.name(),
                 tok.lexema,
                 tok.terminal.to_code(),
@@ -131,7 +131,7 @@ impl<W: Write> Logger<W> {
             "\n{RED}{BOLD} {total} erro(s) encontrado(s){RESET}"
         )
         .unwrap();
-        for (_, erro) in self.errors.iter().enumerate() {
+        for erro in self.errors.iter() {
             writeln!(self.writer, "{RED}   - {}{RESET}", erro).unwrap();
         }
     }

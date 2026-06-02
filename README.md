@@ -1,6 +1,6 @@
-# Analisador Léxico
+# Compilador
 
-Analisador léxico implementado em Rust
+Analisador lexico e sintatico (LL(1)) implementado em Rust
 
 ---
 
@@ -58,34 +58,41 @@ target\release\Compilador.exe <arquivo>
 
 **Exemplo com arquivo de teste:**
 ```bash
-cargo run -- testes/teste.txt
+cargo run -- testes/fat.c
 ```
 
-**Exemplo sem saida:**
+**Exemplo sem o passo a passo (apenas o resultado):**
 ```bash
-cargo run -- testes/teste.txt --no-output
+cargo run -- testes/fat.c --no-output
 ```
 
 ---
 
 ### Formato da saida
 
-Cada token e impresso no formato:
-
-```
-<Terminal, codigo, "lexema", linha:coluna>
-```
+Por padrao, o analisador imprime o passo a passo do parsing: cada token lido, a acao tomada (expansao pela tabela `M(NaoTerminal, lookahead)` ou corte de terminal) e o estado da pilha.
 
 **Exemplo:**
 ```
-<Int, 1, "int", 1:1>
-<Id, 8, "fatorial", 1:5>
-<StartParen, 21, "(", 1:13>
-...
-<Eof, 27, "", 10:1>
+>> float (lexema: "float", codigo: 2, linha: 1, coluna: 1)
+   acao: M(Program, float) = empilhando p1           pilha: FunctionList $
+   acao: M(FunctionList, float) = empilhando p2      pilha: Function FunctionList' $
+   acao: M(Type, float) = empilhando p66             pilha: float id ( ParamListOpt ) Block FunctionList' $
+   acao: cortando float                              pilha: id ( ParamListOpt ) Block FunctionList' $
 ```
 
-Erros lexicos sao reportados no `stderr` com a posicao do caractere invalido, e o processo encerra com codigo de saida `1`.
+Ao final, e impresso `Entrada aceita.` ou, em caso de erro, `Entrada rejeitada.` seguido da lista de erros lexicos e sintaticos, cada um com linha e coluna. O flag `--no-output` suprime o passo a passo, mostrando apenas o resultado.
+
+**Exemplo:**
+```
+Entrada rejeitada.
+
+ 2 erro(s) encontrado(s)
+   - Erro lexico linha 3, coluna 11: Caractere invalido '@'
+   - Erro sintatico linha 3, coluna 15: Token inesperado ';' em <MulExpr>
+```
+
+Quando a entrada e rejeitada, o processo encerra com codigo de saida `1`.
 
 ---
 
@@ -96,3 +103,6 @@ Os arquivos de teste estao no diretorio `testes/`:
 - `fat.c` - funcoes matematicas com float (raiz quadrada, raiz cubica, pi, area, distancia)
 - `fib.c` - calculo de mdc e raiz quadrada
 - `gcd.c` - teoria dos números (mdc, mmc, potencia, primos)
+- `erro_lexico.c` - caracteres invalidos
+- `erro_sintatico.c` - erros de sintaxe e recuperacao
+- `erro_misto.c` - erros lexicos e sintaticos combinados
