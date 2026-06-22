@@ -392,7 +392,7 @@ pub enum Action {
 }
 
 impl Action {
-    pub const fn to_code(&self) -> u8 {
+    pub const fn to_code(self) -> u8 {
         match self {
             Action::OpenScope => 66,
             Action::CloseScope => 67,

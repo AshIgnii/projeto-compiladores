@@ -176,10 +176,10 @@ impl<'a> SemanticAnalyzer<'a> {
                     self.seq_counter += 1;
                     let seq = self.seq_counter;
                     self.pending_params.push((name, data_type, seq));
-                    if let Some(function) = self.current_function {
-                        if let Some(sig) = self.functions.get_mut(function) {
-                            sig.params.push(data_type);
-                        }
+                    if let Some(function) = self.current_function
+                        && let Some(sig) = self.functions.get_mut(function)
+                    {
+                        sig.params.push(data_type);
                     }
                     self.last_inserted = Some((name.to_string(), self.scopes.len() + 1));
                 }
@@ -234,20 +234,20 @@ impl<'a> SemanticAnalyzer<'a> {
             Action::CheckAssignment => {
                 let source = self.type_stack.pop();
                 let target = self.type_stack.pop();
-                if let (Some(dst), Some(src)) = (target, source) {
-                    if !compatible(dst, src) {
-                        let (l, c) = (self.last_line, self.last_col);
-                        self.error(
-                            logger,
-                            l,
-                            c,
-                            &format!(
-                                "atribuicao incompativel: '{}' recebe '{}'",
-                                type_name(dst),
-                                type_name(src)
-                            ),
-                        );
-                    }
+                if let (Some(dst), Some(src)) = (target, source)
+                    && !compatible(dst, src)
+                {
+                    let (l, c) = (self.last_line, self.last_col);
+                    self.error(
+                        logger,
+                        l,
+                        c,
+                        &format!(
+                            "atribuicao incompativel: '{}' recebe '{}'",
+                            type_name(dst),
+                            type_name(src)
+                        ),
+                    );
                 }
             }
             Action::PushNumberType => {
@@ -363,35 +363,35 @@ impl<'a> SemanticAnalyzer<'a> {
                     .current_function
                     .and_then(|name| self.functions.get(name))
                     .map(|sig| sig.return_type);
-                if let Some(expected) = expected {
-                    if !compatible(expected, expr_type) {
-                        let (l, c) = (self.last_line, self.last_col);
-                        self.error(
-                            logger,
-                            l,
-                            c,
-                            &format!(
-                                "retorno incompativel: funcao retorna '{}', expressao e '{}'",
-                                type_name(expected),
-                                type_name(expr_type)
-                            ),
-                        );
-                    }
+                if let Some(expected) = expected
+                    && !compatible(expected, expr_type)
+                {
+                    let (l, c) = (self.last_line, self.last_col);
+                    self.error(
+                        logger,
+                        l,
+                        c,
+                        &format!(
+                            "retorno incompativel: funcao retorna '{}', expressao e '{}'",
+                            type_name(expected),
+                            type_name(expr_type)
+                        ),
+                    );
                 }
                 self.return_stack.push(true);
             }
             Action::CheckReturnRequired => {
                 let returns = self.return_stack.pop().unwrap_or(false);
-                if !returns {
-                    if let Some(name) = self.current_function {
-                        let (l, c) = (self.last_line, self.last_col);
-                        self.error(
-                            logger,
-                            l,
-                            c,
-                            &format!("funcao '{}' pode nao retornar em todos os caminhos", name),
-                        );
-                    }
+                if !returns
+                    && let Some(name) = self.current_function
+                {
+                    let (l, c) = (self.last_line, self.last_col);
+                    self.error(
+                        logger,
+                        l,
+                        c,
+                        &format!("funcao '{}' pode nao retornar em todos os caminhos", name),
+                    );
                 }
             }
             Action::CheckMain => {
