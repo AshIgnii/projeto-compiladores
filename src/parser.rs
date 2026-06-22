@@ -1,13 +1,15 @@
 use crate::automaton::Automaton;
 use crate::logger::Logger;
 use crate::parsing;
-use crate::symbols::{EOF_SYMBOL, START_SYMBOL, Symbol, Terminal};
+use crate::semantic::SemanticAnalyzer;
+use crate::symbols::{Action, EOF_SYMBOL, START_SYMBOL, Symbol, Terminal};
 use crate::token::Token;
 use std::io::Write;
 
 pub struct Parser<'a> {
     automaton: Automaton<'a>,
     stack: Vec<Symbol>,
+    analyzer: SemanticAnalyzer<'a>,
     errors: usize,
 }
 
@@ -16,6 +18,7 @@ impl<'a> Parser<'a> {
         Parser {
             automaton,
             stack: Vec::with_capacity(64),
+            analyzer: SemanticAnalyzer::new(),
             errors: 0,
         }
     }
@@ -31,6 +34,9 @@ impl<'a> Parser<'a> {
         while let Some(&top) = self.stack.last() {
             let finished = if top.is_terminal() {
                 self.match_terminal(top, &mut current, &mut lookahead, logger)
+            } else if top.is_action() {
+                self.run_action(top, logger);
+                false
             } else {
                 self.expand(top, &mut current, &mut lookahead, logger)
             };
@@ -39,19 +45,27 @@ impl<'a> Parser<'a> {
             }
         }
 
+        self.errors += self.analyzer.errors;
         self.report_result(logger)
+    }
+
+    fn run_action<W: Write>(&mut self, top: Symbol, logger: &mut Logger<W>) {
+        self.stack.pop();
+        logger.step_action(top, &self.stack);
+        self.analyzer.execute(Action::from_code(top.code()), logger);
     }
 
     fn match_terminal<W: Write>(
         &mut self,
         top: Symbol,
-        current: &mut Token,
+        current: &mut Token<'a>,
         lookahead: &mut Symbol,
         logger: &mut Logger<W>,
     ) -> bool {
         if top == *lookahead {
             self.stack.pop();
             logger.step_match(top, &self.stack);
+            self.analyzer.on_match(current);
             if top == EOF_SYMBOL {
                 return true;
             }
@@ -69,7 +83,7 @@ impl<'a> Parser<'a> {
     fn expand<W: Write>(
         &mut self,
         top: Symbol,
-        current: &mut Token,
+        current: &mut Token<'a>,
         lookahead: &mut Symbol,
         logger: &mut Logger<W>,
     ) -> bool {
@@ -107,7 +121,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn advance<W: Write>(&mut self, logger: &mut Logger<W>) -> Token {
+    fn advance<W: Write>(&mut self, logger: &mut Logger<W>) -> Token<'a> {
         loop {
             match self.automaton.next_token() {
                 Some(token) => {
@@ -122,7 +136,7 @@ impl<'a> Parser<'a> {
                 None => {
                     return Token {
                         terminal: Terminal::Eof,
-                        lexema: String::new(),
+                        lexema: "",
                         line: 0,
                         column: 0,
                     };

@@ -11,7 +11,7 @@ impl<'a> Automaton<'a> {
         Automaton { reader }
     }
 
-    pub fn blank_char(&mut self) -> Option<Token> {
+    pub fn blank_char(&mut self) -> Option<Token<'a>> {
         while let Some(byte) = self.reader.peek() {
             if byte.is_ascii_whitespace() {
                 self.reader.next_char();
@@ -22,32 +22,28 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn id_or_keyword(&mut self) -> Option<Token> {
-        let mut lexema = String::new();
+    pub fn id_or_keyword(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
-        if let Some(byte) = self.reader.peek() {
-            if byte.is_ascii_alphabetic() {
-                lexema.push(byte as char);
+        match self.reader.peek() {
+            Some(byte) if byte.is_ascii_alphabetic() => {
                 self.reader.next_char();
-            } else {
-                return None;
             }
-        } else {
-            return None;
+            _ => return None,
         }
 
         while let Some(byte) = self.reader.peek() {
             if byte.is_ascii_alphanumeric() {
-                lexema.push(byte as char);
                 self.reader.next_char();
             } else {
                 break;
             }
         }
 
-        let terminal = Terminal::keyword_to_terminal(lexema.as_str()).unwrap_or(Terminal::Id);
+        let lexema = self.reader.slice_from(start);
+        let terminal = Terminal::keyword_to_terminal(lexema).unwrap_or(Terminal::Id);
         Some(Token {
             terminal,
             lexema,
@@ -56,14 +52,13 @@ impl<'a> Automaton<'a> {
         })
     }
 
-    pub fn int_or_float(&mut self) -> Option<Token> {
-        let mut lexema = String::new();
+    pub fn int_or_float(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
         match self.reader.peek() {
             Some(byte) if byte.is_ascii_digit() => {
-                lexema.push(byte as char);
                 self.reader.next_char();
             }
             _ => return None,
@@ -71,7 +66,6 @@ impl<'a> Automaton<'a> {
 
         while let Some(byte) = self.reader.peek() {
             if byte.is_ascii_digit() {
-                lexema.push(byte as char);
                 self.reader.next_char();
             } else {
                 break;
@@ -79,18 +73,16 @@ impl<'a> Automaton<'a> {
         }
 
         if let Some(b'.') = self.reader.peek() {
-            lexema.push('.');
             self.reader.next_char();
 
             match self.reader.peek() {
                 Some(byte) if byte.is_ascii_digit() => {
-                    lexema.push(byte as char);
                     self.reader.next_char();
                 }
                 _ => {
                     return Some(Token {
                         terminal: Terminal::Error,
-                        lexema,
+                        lexema: self.reader.slice_from(start),
                         line: start_line,
                         column: start_column,
                     });
@@ -99,7 +91,6 @@ impl<'a> Automaton<'a> {
 
             while let Some(byte) = self.reader.peek() {
                 if byte.is_ascii_digit() {
-                    lexema.push(byte as char);
                     self.reader.next_char();
                 } else {
                     break;
@@ -109,15 +100,16 @@ impl<'a> Automaton<'a> {
 
         Some(Token {
             terminal: Terminal::Num,
-            lexema,
+            lexema: self.reader.slice_from(start),
             line: start_line,
             column: start_column,
         })
     }
 
-    pub fn assign_or_equals(&mut self) -> Option<Token> {
+    pub fn assign_or_equals(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
         if let Some(b'=') = self.reader.peek() {
             self.reader.next_char();
@@ -126,7 +118,7 @@ impl<'a> Automaton<'a> {
                 self.reader.next_char();
                 return Some(Token {
                     terminal: Terminal::Equals,
-                    lexema: "==".to_string(),
+                    lexema: self.reader.slice_from(start),
                     line: start_line,
                     column: start_column,
                 });
@@ -134,7 +126,7 @@ impl<'a> Automaton<'a> {
 
             return Some(Token {
                 terminal: Terminal::Assign,
-                lexema: "=".to_string(),
+                lexema: self.reader.slice_from(start),
                 line: start_line,
                 column: start_column,
             });
@@ -143,9 +135,10 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn not_equals(&mut self) -> Option<Token> {
+    pub fn not_equals(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
         if let Some(b'!') = self.reader.peek() {
             self.reader.next_char();
@@ -154,7 +147,7 @@ impl<'a> Automaton<'a> {
                 self.reader.next_char();
                 return Some(Token {
                     terminal: Terminal::NotEquals,
-                    lexema: "!=".to_string(),
+                    lexema: self.reader.slice_from(start),
                     line: start_line,
                     column: start_column,
                 });
@@ -162,7 +155,7 @@ impl<'a> Automaton<'a> {
 
             return Some(Token {
                 terminal: Terminal::Error,
-                lexema: "!".to_string(),
+                lexema: self.reader.slice_from(start),
                 line: start_line,
                 column: start_column,
             });
@@ -171,9 +164,10 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn less_than_or_less_than_or_equal(&mut self) -> Option<Token> {
+    pub fn less_than_or_less_than_or_equal(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
         if let Some(b'<') = self.reader.peek() {
             self.reader.next_char();
@@ -182,7 +176,7 @@ impl<'a> Automaton<'a> {
                 self.reader.next_char();
                 return Some(Token {
                     terminal: Terminal::LessThanOrEqual,
-                    lexema: "<=".to_string(),
+                    lexema: self.reader.slice_from(start),
                     line: start_line,
                     column: start_column,
                 });
@@ -190,7 +184,7 @@ impl<'a> Automaton<'a> {
 
             return Some(Token {
                 terminal: Terminal::LessThan,
-                lexema: "<".to_string(),
+                lexema: self.reader.slice_from(start),
                 line: start_line,
                 column: start_column,
             });
@@ -199,9 +193,10 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn greater_than_or_greater_than_or_equal(&mut self) -> Option<Token> {
+    pub fn greater_than_or_greater_than_or_equal(&mut self) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
         if let Some(b'>') = self.reader.peek() {
             self.reader.next_char();
@@ -210,7 +205,7 @@ impl<'a> Automaton<'a> {
                 self.reader.next_char();
                 return Some(Token {
                     terminal: Terminal::GreaterThanOrEqual,
-                    lexema: ">=".to_string(),
+                    lexema: self.reader.slice_from(start),
                     line: start_line,
                     column: start_column,
                 });
@@ -218,7 +213,7 @@ impl<'a> Automaton<'a> {
 
             return Some(Token {
                 terminal: Terminal::GreaterThan,
-                lexema: ">".to_string(),
+                lexema: self.reader.slice_from(start),
                 line: start_line,
                 column: start_column,
             });
@@ -227,15 +222,16 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn plus(&mut self) -> Option<Token> {
+    fn single(&mut self, expected: u8, terminal: Terminal) -> Option<Token<'a>> {
         let start_line = self.reader.line;
         let start_column = self.reader.column;
+        let start = self.reader.offset();
 
-        if let Some(b'+') = self.reader.peek() {
+        if self.reader.peek() == Some(expected) {
             self.reader.next_char();
             return Some(Token {
-                terminal: Terminal::Plus,
-                lexema: "+".to_string(),
+                terminal,
+                lexema: self.reader.slice_from(start),
                 line: start_line,
                 column: start_column,
             });
@@ -244,166 +240,53 @@ impl<'a> Automaton<'a> {
         None
     }
 
-    pub fn minus(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'-') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::Minus,
-                lexema: "-".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn plus(&mut self) -> Option<Token<'a>> {
+        self.single(b'+', Terminal::Plus)
     }
 
-    pub fn multiply(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'*') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::Multiply,
-                lexema: "*".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn minus(&mut self) -> Option<Token<'a>> {
+        self.single(b'-', Terminal::Minus)
     }
 
-    pub fn divide(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'/') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::Divide,
-                lexema: "/".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn multiply(&mut self) -> Option<Token<'a>> {
+        self.single(b'*', Terminal::Multiply)
     }
 
-    pub fn start_paren(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'(') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::StartParen,
-                lexema: "(".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn divide(&mut self) -> Option<Token<'a>> {
+        self.single(b'/', Terminal::Divide)
     }
 
-    pub fn end_paren(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b')') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::EndParen,
-                lexema: ")".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn start_paren(&mut self) -> Option<Token<'a>> {
+        self.single(b'(', Terminal::StartParen)
     }
 
-    pub fn start_brace(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'{') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::StartBrace,
-                lexema: "{".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn end_paren(&mut self) -> Option<Token<'a>> {
+        self.single(b')', Terminal::EndParen)
     }
 
-    pub fn end_brace(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b'}') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::EndBrace,
-                lexema: "}".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn start_brace(&mut self) -> Option<Token<'a>> {
+        self.single(b'{', Terminal::StartBrace)
     }
 
-    pub fn semicolon(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b';') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::Semicolon,
-                lexema: ";".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn end_brace(&mut self) -> Option<Token<'a>> {
+        self.single(b'}', Terminal::EndBrace)
     }
 
-    pub fn comma(&mut self) -> Option<Token> {
-        let start_line = self.reader.line;
-        let start_column = self.reader.column;
-
-        if let Some(b',') = self.reader.peek() {
-            self.reader.next_char();
-            return Some(Token {
-                terminal: Terminal::Comma,
-                lexema: ",".to_string(),
-                line: start_line,
-                column: start_column,
-            });
-        }
-
-        None
+    pub fn semicolon(&mut self) -> Option<Token<'a>> {
+        self.single(b';', Terminal::Semicolon)
     }
 
-    pub fn next_token(&mut self) -> Option<Token> {
+    pub fn comma(&mut self) -> Option<Token<'a>> {
+        self.single(b',', Terminal::Comma)
+    }
+
+    pub fn next_token(&mut self) -> Option<Token<'a>> {
         self.blank_char();
 
         match self.reader.peek() {
             None => Some(Token {
                 terminal: Terminal::Eof,
-                lexema: String::new(),
+                lexema: "",
                 line: self.reader.line,
                 column: self.reader.column,
             }),
@@ -425,12 +308,15 @@ impl<'a> Automaton<'a> {
                 b';' => self.semicolon(),
                 b',' => self.comma(),
                 _ => {
+                    let start_line = self.reader.line;
+                    let start_column = self.reader.column;
+                    let start = self.reader.offset();
                     self.reader.next_char();
                     Some(Token {
                         terminal: Terminal::Error,
-                        lexema: (b as char).to_string(),
-                        line: self.reader.line,
-                        column: self.reader.column - 1,
+                        lexema: self.reader.slice_from(start),
+                        line: start_line,
+                        column: start_column,
                     })
                 }
             },

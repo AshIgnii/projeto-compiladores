@@ -3,6 +3,7 @@ mod logger;
 mod parser;
 mod parsing;
 mod reader;
+mod semantic;
 mod symbols;
 mod token;
 

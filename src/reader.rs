@@ -36,4 +36,13 @@ impl<'a> Reader<'a> {
     pub(crate) fn peek(&self) -> Option<u8> {
         self.data.get(self.position).copied()
     }
+
+    pub(crate) fn offset(&self) -> usize {
+        self.position
+    }
+
+    pub(crate) fn slice_from(&self, start: usize) -> &'a str {
+        let data = self.data;
+        std::str::from_utf8(&data[start..self.position]).unwrap_or("?")
+    }
 }

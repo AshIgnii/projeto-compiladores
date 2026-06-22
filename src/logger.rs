@@ -11,6 +11,14 @@ const GREEN: &str = "\x1b[32m";
 const YELLOW: &str = "\x1b[33m";
 const BLUE: &str = "\x1b[34m";
 const CYAN: &str = "\x1b[36m";
+const MAGENTA: &str = "\x1b[35m";
+
+#[derive(Clone, Copy)]
+pub enum RowKind {
+    Normal,
+    New,
+    Removed,
+}
 
 const ACTION_WIDTH: usize = 42;
 
@@ -31,7 +39,7 @@ impl<W: Write> Logger<W> {
         }
     }
 
-    pub fn token(&mut self, tok: &Token) {
+    pub fn token(&mut self, tok: &Token<'_>) {
         if self.verbose {
             writeln!(
                 self.writer,
@@ -73,6 +81,51 @@ impl<W: Write> Logger<W> {
         }
     }
 
+    pub fn step_action(&mut self, action: Symbol, stack: &[Symbol]) {
+        if self.verbose {
+            self.step(MAGENTA, &format!("executando {}", action.name()), stack);
+        }
+    }
+
+    pub fn symbol_table(&mut self, rows: &[([String; 4], RowKind)]) {
+        if !self.verbose {
+            return;
+        }
+
+        const HEADER: [&str; 4] = ["simbolos", "tipo", "valor", "nivel"];
+        let mut width = [0usize; 4];
+        for (column, label) in HEADER.iter().enumerate() {
+            width[column] = label.len();
+        }
+        for (cells, _) in rows {
+            for (column, cell) in cells.iter().enumerate() {
+                width[column] = width[column].max(cell.len());
+            }
+        }
+
+        let mut header = String::from("|");
+        for (column, label) in HEADER.iter().enumerate() {
+            header.push_str(&format!(" {} |", center(label, width[column])));
+        }
+        writeln!(self.writer, "\n   {DIM}{header}{RESET}").unwrap();
+
+        if rows.is_empty() {
+            writeln!(self.writer, "   {DIM}(vazia){RESET}").unwrap();
+        }
+        for (cells, kind) in rows {
+            let mut line = String::from("|");
+            for (column, cell) in cells.iter().enumerate() {
+                line.push_str(&format!(" {:<width$} |", cell, width = width[column]));
+            }
+            match kind {
+                RowKind::Normal => writeln!(self.writer, "   {line}").unwrap(),
+                RowKind::New => writeln!(self.writer, "   {GREEN}{line}{RESET}").unwrap(),
+                RowKind::Removed => writeln!(self.writer, "   {RED}{line}{RESET}").unwrap(),
+            }
+        }
+        writeln!(self.writer).unwrap();
+    }
+
     pub fn recover_drop_terminal(&mut self, stack: &[Symbol]) {
         if self.verbose {
             self.step(
@@ -103,7 +156,7 @@ impl<W: Write> Logger<W> {
         }
     }
 
-    pub fn lexical_error(&mut self, tok: &Token) {
+    pub fn lexical_error(&mut self, tok: &Token<'_>) {
         let msg = format!(
             "linha {}, coluna {}: Caractere invalido '{}'",
             tok.line, tok.column, tok.lexema
@@ -111,7 +164,7 @@ impl<W: Write> Logger<W> {
         self.record("Erro lexico", msg);
     }
 
-    pub fn expected(&mut self, expected: Symbol, found: &Token) {
+    pub fn expected(&mut self, expected: Symbol, found: &Token<'_>) {
         let msg = format!(
             "linha {}, coluna {}: Esperado '{}', Encontrado '{}'",
             found.line,
@@ -122,7 +175,7 @@ impl<W: Write> Logger<W> {
         self.record("Erro sintatico", msg);
     }
 
-    pub fn unexpected(&mut self, nonterminal: Symbol, found: &Token) {
+    pub fn unexpected(&mut self, nonterminal: Symbol, found: &Token<'_>) {
         let msg = format!(
             "linha {}, coluna {}: Token inesperado '{}' em <{}>",
             found.line,
@@ -131,6 +184,11 @@ impl<W: Write> Logger<W> {
             nonterminal.name()
         );
         self.record("Erro sintatico", msg);
+    }
+
+    pub fn semantic_error(&mut self, line: usize, column: usize, detail: &str) {
+        let msg = format!("linha {}, coluna {}: {}", line, column, detail);
+        self.record("Erro semantico", msg);
     }
 
     pub fn accepted(&mut self) {
@@ -196,6 +254,13 @@ impl<W: Write> Logger<W> {
     }
 }
 
+fn center(text: &str, width: usize) -> String {
+    let total = width.saturating_sub(text.len());
+    let left = total / 2;
+    let right = total - left;
+    format!("{}{}{}", " ".repeat(left), text, " ".repeat(right))
+}
+
 fn detect_width() -> usize {
     std::env::var("COLUMNS")
         .ok()
@@ -221,10 +286,10 @@ fn visible_len(s: &str) -> usize {
     len
 }
 
-fn found_str(tok: &Token) -> &str {
+fn found_str<'b>(tok: &Token<'b>) -> &'b str {
     if tok.lexema.is_empty() {
         tok.terminal.name()
     } else {
-        tok.lexema.as_str()
+        tok.lexema
     }
 }

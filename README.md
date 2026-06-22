@@ -1,6 +1,6 @@
 # Compilador
 
-Analisador lexico e sintatico (LL(1)) implementado em Rust
+Analisador léxico, sintático (LL(1)) e semântico implementado em Rust
 
 ---
 
@@ -18,7 +18,7 @@ source $HOME/.cargo/env
 
 Baixe e execute o instalador em: https://www.rust-lang.org/tools/install
 
-Após a instalacao, reinicie o terminal e verifique com:
+Após a instalação, reinicie o terminal e verifique com:
 ```bash
 rustc --version
 cargo --version
@@ -42,7 +42,7 @@ O binario será gerado em `target/release/Compilador` (Linux/macOS) ou `target\r
 cargo run -- <arquivo>
 ```
 
-Ou diretamente pelo binario compilado:
+Ou diretamente pelo binário compilado:
 
 **Linux / macOS:**
 ```bash
@@ -68,9 +68,9 @@ cargo run -- testes/fat.c --no-output
 
 ---
 
-### Formato da saida
+### Formato da saída
 
-Por padrao, o analisador imprime o passo a passo do parsing: cada token lido, a acao tomada (expansao pela tabela `M(NaoTerminal, lookahead)` ou corte de terminal) e o estado da pilha.
+Por padrão, o analisador imprime o passo a passo: cada token lido, a ação tomada (expansão pela tabela `M(NaoTerminal, lookahead)`, corte de terminal ou execução de uma ação semântica `#acao#`) e o estado da pilha.
 
 **Exemplo:**
 ```
@@ -81,7 +81,16 @@ Por padrao, o analisador imprime o passo a passo do parsing: cada token lido, a 
    acao: cortando float                              pilha: id ( ParamListOpt ) Block FunctionList' $
 ```
 
-Ao final, e impresso `Entrada aceita.` ou, em caso de erro, `Entrada rejeitada.` seguido da lista de erros lexicos e sintaticos, cada um com linha e coluna. O flag `--no-output` suprime o passo a passo, mostrando apenas o resultado.
+Sempre que a tabela de símbolos e modificada (inserção ou remoção), ela e impressa em seguida. As linhas recém-inseridas aparecem em verde e as removidas aparecem em vermelho.
+
+**Exemplo:**
+```
+   | simbolos |   tipo    | valor | nivel |
+   | main     | procedure | int   | 0     |
+   | x        | variavel  | int   | 1     |
+```
+
+Ao final, e impresso `Entrada aceita.` ou, em caso de erro, `Entrada rejeitada.` seguido da lista de erros léxicos, sintáticos e semânticos, cada um com linha e coluna. O flag `--no-output` suprime o passo a passo (e a tabela de símbolos), mostrando apenas o resultado.
 
 **Exemplo:**
 ```
@@ -92,17 +101,18 @@ Entrada rejeitada.
    - Erro sintatico linha 3, coluna 15: Token inesperado ';' em <MulExpr>
 ```
 
-Quando a entrada e rejeitada, o processo encerra com codigo de saida `1`.
+Quando a entrada e rejeitada, o processo encerra com código de saída `1`.
 
 ---
 
 ## Testes
 
-Os arquivos de teste estao no diretorio `testes/`:
+Os arquivos de teste estão no diretório `testes/`:
 
-- `fat.c` - funcoes matematicas com float (raiz quadrada, raiz cubica, pi, area, distancia)
+- `fat.c` - funções matemáticas com float (raiz quadrada, raiz cubica, pi, area, distancia)
 - `fib.c` - calculo de mdc e raiz quadrada
 - `gcd.c` - teoria dos números (mdc, mmc, potencia, primos)
-- `erro_lexico.c` - caracteres invalidos
-- `erro_sintatico.c` - erros de sintaxe e recuperacao
-- `erro_misto.c` - erros lexicos e sintaticos combinados
+- `erro_lexico.c` - caracteres inválidos
+- `erro_sintatico.c` - erros de sintaxe e recuperação
+- `erro_misto.c` - todos os tipos de erros combinados
+- `erro_semantico.c` - erros semânticos (regras 1-12)

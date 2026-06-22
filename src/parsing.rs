@@ -119,24 +119,24 @@ static PARSING_TABLE: [[u8; 28]; 37] = [
 
 static PRODUCTIONS: [&[u8]; 67] = [
     &[],
-    &[30],                    // Program -> FunctionList
+    &[83, 30],                // Program -> FunctionList #verificarMain#
     &[31, 32],                // FunctionList -> Function FunctionList'
     &[31, 32],                // FunctionList' -> Function FunctionList'
     &[],                      // FunctionList' -> e
-    &[37, 22, 33, 21, 8, 65], // Function -> Type id ( ParamListOpt ) Block
+    &[82, 37, 22, 33, 21, 68, 8, 65], // Function -> Type id #inserirFuncao# ( ParamListOpt ) Block #verificarRetornoObrigatorio#
     &[34],                    // ParamListOpt -> ParamList
     &[],                      // ParamListOpt -> e
     &[35, 36],                // ParamList -> Param ParamList'
     &[35, 36, 25],            // ParamList' -> , Param ParamList'
     &[],                      // ParamList' -> e
-    &[8, 65],                 // Param -> Type id
-    &[24, 42, 38, 23],        // Block -> { DeclListOpt StmtListOpt }
+    &[69, 8, 65],             // Param -> Type id #inserirParametro#
+    &[67, 24, 42, 38, 66, 23], // Block -> { #abrirEscopo# DeclListOpt StmtListOpt } #removerEscopo#
     &[39],                    // DeclListOpt -> DeclList
     &[],                      // DeclListOpt -> e
     &[40, 41],                // DeclList -> VarDecl DeclList'
     &[40, 41],                // DeclList' -> VarDecl DeclList'
     &[],                      // DeclList' -> e
-    &[26, 8, 65],             // VarDecl -> Type id ;
+    &[26, 70, 8, 65],         // VarDecl -> Type id #inserirVariavel# ;
     &[43],                    // StmtListOpt -> StmtList
     &[],                      // StmtListOpt -> e
     &[44, 45],                // StmtList -> Stmt StmtList'
@@ -148,16 +148,16 @@ static PRODUCTIONS: [&[u8]; 67] = [
     &[48],                    // Stmt -> PrintStmt
     &[47],                    // Stmt -> ReturnStmt
     &[37],                    // Stmt -> Block
-    &[26, 52, 10, 8],         // AssignStmt -> id = Expr ;
-    &[26, 52, 6],             // ReturnStmt -> return Expr ;
-    &[26, 22, 52, 21, 7],     // PrintStmt -> print ( Expr ) ;
-    &[50, 45, 22, 52, 21, 3], // IfStmt -> if ( Expr ) Stmt ElsePart
-    &[45, 4],                 // ElsePart -> else Stmt
-    &[],                      // ElsePart -> e
-    &[45, 22, 52, 21, 5],     // WhileStmt -> while ( Expr ) Stmt
+    &[26, 84, 73, 52, 10, 72, 71, 8], // AssignStmt -> id #empilharNome# #verificarVariavelDeclarada# = Expr #verificarAtribuicao# #empurraFalso# ;
+    &[26, 81, 52, 6],         // ReturnStmt -> return Expr #verificarTipoRetorno# ;
+    &[26, 85, 22, 52, 21, 7], // PrintStmt -> print ( Expr ) #fimPrint# ;
+    &[50, 45, 22, 77, 52, 21, 3], // IfStmt -> if ( Expr #verificarCondicaoBooleana# ) Stmt ElsePart
+    &[87, 45, 4],             // ElsePart -> else Stmt #combinaRetorno#
+    &[86],                    // ElsePart -> e #anulaRetorno#
+    &[86, 45, 22, 77, 52, 21, 5], // WhileStmt -> while ( Expr #verificarCondicaoBooleana# ) Stmt #anulaRetorno#
     &[53],                    // Expr -> RelExpr
     &[54, 56],                // RelExpr -> AddExpr RelExpr'
-    &[56, 55],                // RelExpr' -> RelOp AddExpr
+    &[76, 75, 56, 55],        // RelExpr' -> RelOp AddExpr #verificarTiposIguais# #resultadoBooleano#
     &[],                      // RelExpr' -> e
     &[15],                    // RelOp -> ==
     &[16],                    // RelOp -> !=
@@ -166,22 +166,22 @@ static PRODUCTIONS: [&[u8]; 67] = [
     &[19],                    // RelOp -> <=
     &[20],                    // RelOp -> >=
     &[57, 58],                // AddExpr -> MulExpr AddExpr'
-    &[57, 58, 11],            // AddExpr' -> + MulExpr AddExpr'
-    &[57, 58, 12],            // AddExpr' -> - MulExpr AddExpr'
+    &[57, 75, 58, 11],        // AddExpr' -> + MulExpr #verificarTiposIguais# AddExpr'
+    &[57, 75, 58, 12],        // AddExpr' -> - MulExpr #verificarTiposIguais# AddExpr'
     &[],                      // AddExpr' -> e
     &[59, 60],                // MulExpr -> Factor MulExpr'
-    &[59, 60, 13],            // MulExpr' -> * Factor MulExpr'
-    &[59, 60, 14],            // MulExpr' -> / Factor MulExpr'
+    &[59, 75, 60, 13],        // MulExpr' -> * Factor #verificarTiposIguais# MulExpr'
+    &[59, 75, 60, 14],        // MulExpr' -> / Factor #verificarTiposIguais# MulExpr'
     &[],                      // MulExpr' -> e
     &[22, 52, 21],            // Factor -> ( Expr )
-    &[61, 8],                 // Factor -> id FactorTail
-    &[9],                     // Factor -> num
-    &[22, 62, 21],            // FactorTail -> ( ArgListOpt )
-    &[],                      // FactorTail -> e
+    &[61, 71, 8],             // Factor -> id #empilharNome# FactorTail
+    &[74, 9],                 // Factor -> num #empilharTipoNumero#
+    &[80, 22, 62, 78, 21],    // FactorTail -> ( #abrirArgs# ArgListOpt ) #verificarChamadaFuncao#
+    &[72],                    // FactorTail -> e #verificarVariavelDeclarada#
     &[63],                    // ArgListOpt -> ArgList
     &[],                      // ArgListOpt -> e
-    &[64, 52],                // ArgList -> Expr ArgList'
-    &[64, 52, 25],            // ArgList' -> , Expr ArgList'
+    &[64, 79, 52],            // ArgList -> Expr #contarArgumento# ArgList'
+    &[64, 79, 52, 25],        // ArgList' -> , Expr #contarArgumento# ArgList'
     &[],                      // ArgList' -> e
     &[1],                     // Type -> int
     &[2],                     // Type -> float

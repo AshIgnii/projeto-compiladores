@@ -1,13 +1,13 @@
 use crate::symbols::Terminal;
 use std::fmt;
-pub struct Token {
+pub struct Token<'a> {
     pub terminal: Terminal,
-    pub lexema: String,
+    pub lexema: &'a str,
     pub line: usize,
     pub column: usize,
 }
 
-impl fmt::Display for Token {
+impl fmt::Display for Token<'_> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         write!(
             formatter,

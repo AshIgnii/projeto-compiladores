@@ -2,6 +2,7 @@ use std::fmt;
 
 pub const FIRST_TERMINAL: u8 = Terminal::Int.to_code();
 pub const FIRST_NONTERMINAL: u8 = NonTerminal::Program.to_code();
+pub const FIRST_ACTION: u8 = Action::OpenScope.to_code();
 pub const START_SYMBOL: Symbol = Symbol::new(NonTerminal::Program.to_code());
 pub const EOF_SYMBOL: Symbol = Symbol::new(Terminal::Eof.to_code());
 
@@ -23,12 +24,18 @@ impl Symbol {
     }
 
     pub const fn is_nonterminal(self) -> bool {
-        self.0 >= FIRST_NONTERMINAL
+        self.0 >= FIRST_NONTERMINAL && self.0 < FIRST_ACTION
+    }
+
+    pub const fn is_action(self) -> bool {
+        self.0 >= FIRST_ACTION
     }
 
     pub fn name(self) -> &'static str {
         if self.is_terminal() {
             Terminal::from_code(self.0).name()
+        } else if self.is_action() {
+            Action::from_code(self.0).name()
         } else {
             NonTerminal::from_code(self.0).name()
         }
@@ -354,6 +361,115 @@ impl NonTerminal {
             NonTerminal::ArgList => "ArgList",
             NonTerminal::ArgListPrime => "ArgList'",
             NonTerminal::Type => "Type",
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Action {
+    OpenScope,
+    CloseScope,
+    InsertFunction,
+    InsertParameter,
+    InsertVariable,
+    PushName,
+    CheckVariableDeclared,
+    CheckAssignment,
+    PushNumberType,
+    CheckSameTypes,
+    BooleanResult,
+    CheckBooleanCondition,
+    OpenArgs,
+    CountArgument,
+    CheckFunctionCall,
+    CheckReturnType,
+    CheckReturnRequired,
+    CheckMain,
+    PushFalse,
+    EndPrint,
+    ClearReturn,
+    CombineReturn,
+}
+
+impl Action {
+    pub const fn to_code(&self) -> u8 {
+        match self {
+            Action::OpenScope => 66,
+            Action::CloseScope => 67,
+            Action::InsertFunction => 68,
+            Action::InsertParameter => 69,
+            Action::InsertVariable => 70,
+            Action::PushName => 71,
+            Action::CheckVariableDeclared => 72,
+            Action::CheckAssignment => 73,
+            Action::PushNumberType => 74,
+            Action::CheckSameTypes => 75,
+            Action::BooleanResult => 76,
+            Action::CheckBooleanCondition => 77,
+            Action::OpenArgs => 78,
+            Action::CountArgument => 79,
+            Action::CheckFunctionCall => 80,
+            Action::CheckReturnType => 81,
+            Action::CheckReturnRequired => 82,
+            Action::CheckMain => 83,
+            Action::PushFalse => 84,
+            Action::EndPrint => 85,
+            Action::ClearReturn => 86,
+            Action::CombineReturn => 87,
+        }
+    }
+
+    pub fn from_code(code: u8) -> Action {
+        match code {
+            66 => Action::OpenScope,
+            67 => Action::CloseScope,
+            68 => Action::InsertFunction,
+            69 => Action::InsertParameter,
+            70 => Action::InsertVariable,
+            71 => Action::PushName,
+            72 => Action::CheckVariableDeclared,
+            73 => Action::CheckAssignment,
+            74 => Action::PushNumberType,
+            75 => Action::CheckSameTypes,
+            76 => Action::BooleanResult,
+            77 => Action::CheckBooleanCondition,
+            78 => Action::OpenArgs,
+            79 => Action::CountArgument,
+            80 => Action::CheckFunctionCall,
+            81 => Action::CheckReturnType,
+            82 => Action::CheckReturnRequired,
+            83 => Action::CheckMain,
+            84 => Action::PushFalse,
+            85 => Action::EndPrint,
+            86 => Action::ClearReturn,
+            _ => Action::CombineReturn,
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Action::OpenScope => "#abrirEscopo#",
+            Action::CloseScope => "#removerEscopo#",
+            Action::InsertFunction => "#inserirFuncao#",
+            Action::InsertParameter => "#inserirParametro#",
+            Action::InsertVariable => "#inserirVariavel#",
+            Action::PushName => "#empilharNome#",
+            Action::CheckVariableDeclared => "#verificarVariavelDeclarada#",
+            Action::CheckAssignment => "#verificarAtribuicao#",
+            Action::PushNumberType => "#empilharTipoNumero#",
+            Action::CheckSameTypes => "#verificarTiposIguais#",
+            Action::BooleanResult => "#resultadoBooleano#",
+            Action::CheckBooleanCondition => "#verificarCondicaoBooleana#",
+            Action::OpenArgs => "#abrirArgs#",
+            Action::CountArgument => "#contarArgumento#",
+            Action::CheckFunctionCall => "#verificarChamadaFuncao#",
+            Action::CheckReturnType => "#verificarTipoRetorno#",
+            Action::CheckReturnRequired => "#verificarRetornoObrigatorio#",
+            Action::CheckMain => "#verificarMain#",
+            Action::PushFalse => "#empurraFalso#",
+            Action::EndPrint => "#fimPrint#",
+            Action::ClearReturn => "#anulaRetorno#",
+            Action::CombineReturn => "#combinaRetorno#",
         }
     }
 }
