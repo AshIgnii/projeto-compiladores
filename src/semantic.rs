@@ -145,7 +145,12 @@ impl<'a> SemanticAnalyzer<'a> {
                 if let Some((name, line, col)) = self.pending_id.take() {
                     let return_type = self.pending_type.unwrap_or(DataType::Integer);
                     if self.functions.contains_key(name) {
-                        self.error(logger, line, col, &format!("funcao '{}' ja declarada", name));
+                        self.error(
+                            logger,
+                            line,
+                            col,
+                            &format!("funcao '{}' ja declarada", name),
+                        );
                     }
                     self.seq_counter += 1;
                     let seq = self.seq_counter;
@@ -382,9 +387,7 @@ impl<'a> SemanticAnalyzer<'a> {
             }
             Action::CheckReturnRequired => {
                 let returns = self.return_stack.pop().unwrap_or(false);
-                if !returns
-                    && let Some(name) = self.current_function
-                {
+                if !returns && let Some(name) = self.current_function {
                     let (l, c) = (self.last_line, self.last_col);
                     self.error(
                         logger,
@@ -444,7 +447,14 @@ impl<'a> SemanticAnalyzer<'a> {
         let mut rows: Vec<(usize, usize, String, &str, &str, RowKind)> = Vec::new();
         for (name, sig) in &self.functions {
             let kind = self.row_kind(0, name);
-            rows.push((0, sig.seq, name.clone(), "procedure", type_name(sig.return_type), kind));
+            rows.push((
+                0,
+                sig.seq,
+                name.clone(),
+                "procedure",
+                type_name(sig.return_type),
+                kind,
+            ));
         }
         for (level, scope) in self.scopes.iter().enumerate() {
             for (name, info) in scope {
@@ -472,7 +482,14 @@ impl<'a> SemanticAnalyzer<'a> {
             ));
         }
         for (level, name, category, data_type, seq) in &self.removed {
-            rows.push((*level, *seq, name.clone(), category, data_type, RowKind::Removed));
+            rows.push((
+                *level,
+                *seq,
+                name.clone(),
+                category,
+                data_type,
+                RowKind::Removed,
+            ));
         }
         rows.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
 
